@@ -2,7 +2,7 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInAnonymously,signInWithEmailAndPassword,signOut,setPersistence,browserLocalPersistence} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,setDoc,getDoc,collection,onSnapshot,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-const firebaseConfig={apiKey:'AIzaSyCiRZtZVBYaGw1BRtOlX5zBxIBDso194hc',authDomain:'ultimate-fondue-2026.firebaseapp.com',projectId:'ultimate-fondue-2026',storageBucket:'ultimate-fondue-2026.firebasestorage.app',messagingSenderId:'855617212697',appId:'1:855617212697:web:888d389be3523bfe4bf588'};
+const firebaseConfig={apiKey:'AIzaSyCiRZt2VBYaGw1BRtOlX5zBxIBDso194hc',authDomain:'ultimate-fondue-2026.firebaseapp.com',projectId:'ultimate-fondue-2026',storageBucket:'ultimate-fondue-2026.firebasestorage.app',messagingSenderId:'855617212697',appId:'1:855617212697:web:888d389be3523bfe4bf588'};
 const ORGANIZER='cNO1Yn1bw4ahgJ6dMHR0QWqDHs72',criteria=[['Goût',30],['Texture',25],['Maîtrise technique',20],['Qualité des fromages',15],['Coup de cœur',10]],letters=['A','B','C','D'];
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id),total=a=>a.reduce((x,y)=>x+y,0);let scores=letters.map(()=>criteria.map(()=>0)),user=null,view='jury',unsubscribe=null,votes=[],revealed=false,submitted=false;
 const setStatus=(id,msg,kind='')=>{$(id).textContent=msg;$(id).className='status '+kind};
