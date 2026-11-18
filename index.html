@@ -1,2 +1,44 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#251b18"><title>Ultimate Fondue Award 2026</title><style>body{margin:0;background:#f7f1e7;color:#281e18;font-family:system-ui,sans-serif}main{max-width:650px;margin:auto;padding:20px}header{background:#281e18;color:#fff;padding:24px;border-radius:20px}h1{font-size:26px;margin:0}h2{font-size:21px}.sub{opacity:.75}section{background:white;border-radius:18px;padding:18px;margin:18px 0;box-shadow:0 3px 15px #0001}label{display:block;font-weight:600;margin:14px 0 6px}input[type=text],input[type=number]{box-sizing:border-box;width:100%;padding:12px;border:1px solid #d6c7b7;border-radius:10px;font-size:16px}input[type=range]{width:100%;accent-color:#b76d22}button{border:0;background:#9e5418;color:white;border-radius:11px;padding:13px 15px;font-size:15px;font-weight:700;cursor:pointer;margin:5px 4px 5px 0}button.secondary{background:#e9ded0;color:#281e18}.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.score{font-weight:800;color:#9e5418}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:9px 5px;border-bottom:1px solid #eee;text-align:left}small{color:#6d6258}.warning{color:#a22}footer{padding:18px;text-align:center;color:#756a60}</style></head><body><main><header><div style="font-size:32px">🫕🏆</div><h1>ULTIMATE FONDUE<br>AWARD 2026</h1><p class="sub">Le concours officiel des 4 fondues</p></header><section><label for="name">Nom du membre du jury</label><input id="name" type="text" placeholder="Ex. Camille"><p><small>Les notes sont enregistrées sur cet appareil. Pour un jury sur plusieurs téléphones, chaque personne peut exporter sa fiche et l'organisateur regroupe les résultats.</small></p></section><div id="fondues"></div><section><h2>📋 Ma fiche</h2><div id="recap"></div><button id="save">Enregistrer ma fiche</button><button id="export" class="secondary">Exporter ma fiche CSV</button><p id="message" role="status"></p></section><section><h2>🏆 Synthèse du jury</h2><p><small>Sur le téléphone de l'organisateur : importer les fiches CSV reçues (20 jurés maximum). Les doublons de noms remplacent l'ancienne fiche.</small></p><input id="files" type="file" accept=".csv,text/csv" multiple><div id="ranking"></div><button id="allcsv" class="secondary">Exporter la synthèse CSV</button><button id="clear" class="secondary">Effacer la synthèse</button></section><footer>Que la meilleure fondue gagne !</footer></main><script>
-const criteria=[['Goût',30],['Texture',25],['Maîtrise technique',20],['Qualité des fromages',15],['Coup de cœur',10]], letters=['A','B','C','D'], key='ufa2026_jury', draftKey='ufa2026_draft';let scores=JSON.parse(localStorage.getItem(draftKey)||'null')||letters.map(()=>criteria.map(()=>0));let jury=JSON.parse(localStorage.getItem(key)||'{}');const el=id=>document.getElementById(id),total=a=>a.reduce((x,y)=>x+y,0);function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function render(){el('fondues').innerHTML=letters.map((l,i)=>`<section><div class="row"><h2>🧀 Fondue ${l}</h2><strong class="score" id="total${i}">${total(scores[i])}/100</strong></div>${criteria.map(([n,max],j)=>`<label for="s${i}-${j}" class="row"><span>${n}</span><span id="v${i}-${j}">${scores[i][j]}/${max}</span></label><input id="s${i}-${j}" type="range" min="0" max="${max}" value="${scores[i][j]}" data-i="${i}" data-j="${j}">`).join('')}</section>`).join('');document.querySelectorAll('input[type=range]').forEach(input=>input.addEventListener('input',e=>{let i=+e.target.dataset.i,j=+e.target.dataset.j;scores[i][j]=+e.target.value;localStorage.setItem(draftKey,JSON.stringify(scores));el(`v${i}-${j}`).textContent=`${scores[i][j]}/${criteria[j][1]}`;el(`total${i}`).textContent=`${total(scores[i])}/100`;recap()}));recap();ranking()}function recap(){el('recap').innerHTML=letters.map((l,i)=>`<div class="row"><span>Fondue ${l}</span><b>${total(scores[i])}/100</b></div>`).join('')}function ranking(){let entries=Object.entries(jury), sums=letters.map((l,i)=>entries.reduce((a,[n,s])=>a+total(s[i]),0)),avg=sums.map(s=>entries.length?s/entries.length:0);el('ranking').innerHTML=`<p><strong>${entries.length}/20 jurés enregistrés</strong></p><table><thead><tr><th>Fondue</th><th>Total</th><th>Moyenne /100</th></tr></thead><tbody>${letters.map((l,i)=>({l,i})).sort((a,b)=>avg[b.i]-avg[a.i]).map(({l,i})=>`<tr><td>${l}</td><td>${sums[i]}</td><td><b>${avg[i].toFixed(1)}</b></td></tr>`).join('')}</tbody></table><p><small>Jurés : ${entries.map(([n])=>escapeHTML(n)).join(', ')||'aucun'}</small></p>`}function csvEscape(x){return '"'+String(x).replace(/"/g,'""')+'"'}function download(name,rows){let blob=new Blob(['\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}const headers=['Jury',...letters.flatMap(l=>criteria.map(([n])=>`${l} - ${n}`))];function record(name,s){return [name,...s.flat()]}el('save').onclick=()=>{let name=el('name').value.trim();if(!name){el('message').textContent='Saisis ton nom.';return}if(!jury[name]&&Object.keys(jury).length>=20){el('message').textContent='Maximum 20 jurés.';return}jury[name]=scores.map(a=>[...a]);localStorage.setItem(key,JSON.stringify(jury));el('message').textContent='Fiche enregistrée sur cet appareil.';ranking()};el('export').onclick=()=>{let name=el('name').value.trim();if(!name){el('message').textContent='Saisis ton nom avant export.';return}download('fondue-jury-'+name.replace(/[^a-z0-9_-]/gi,'_')+'.csv',[headers,record(name,scores)])};el('allcsv').onclick=()=>download('ultimate-fondue-synthese-2026.csv',[headers,...Object.entries(jury).map(([n,s])=>record(n,s))]);el('clear').onclick=()=>{if(confirm('Effacer les fiches du jury enregistrées sur cet appareil ?')){jury={};localStorage.removeItem(key);ranking()}};function parseCSV(line){let out=[],field='',quoted=false;for(let i=0;i<line.length;i++){let c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){field+='"';i++}else quoted=!quoted}else if(c===';'&&!quoted){out.push(field);field=''}else field+=c}out.push(field);return out}el('files').onchange=async e=>{let added=0;for(let f of e.target.files){let lines=(await f.text()).replace(/^\ufeff/,'').split(/\r?\n/).filter(Boolean);for(let line of lines.slice(1)){let fields=parseCSV(line),name=(fields[0]||'').trim();if(!name||fields.length!==21)continue;let vals=fields.slice(1).map(Number);if(vals.some((v,k)=>!Number.isInteger(v)||v<0||v>criteria[k%5][1]))continue;if(!jury[name]&&Object.keys(jury).length>=20)continue;jury[name]=letters.map((_,i)=>vals.slice(i*5,i*5+5));added++}}localStorage.setItem(key,JSON.stringify(jury));el('message').textContent=added+' fiche(s) importée(s).';ranking();e.target.value=''};render();</script></body></html>
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOrganizer() {
+      return request.auth != null
+        && request.auth.uid == 'cNO1Yn1bw4ahgJ6dMHR0QWqDHs72';
+    }
+    function validScore(score) {
+      return score is int && score >= 0;
+    }
+    function validFondue(f) {
+      return f is list && f.size() == 5
+        && validScore(f[0]) && f[0] <= 30
+        && validScore(f[1]) && f[1] <= 25
+        && validScore(f[2]) && f[2] <= 20
+        && validScore(f[3]) && f[3] <= 15
+        && validScore(f[4]) && f[4] <= 10;
+    }
+    function validVote() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['prenom', 'notes', 'createdAt'])
+        && d.keys().hasAll(['prenom', 'notes', 'createdAt'])
+        && d.prenom is string
+        && d.prenom.size() >= 1 && d.prenom.size() <= 40
+        && d.notes is list && d.notes.size() == 4
+        && validFondue(d.notes[0])
+        && validFondue(d.notes[1])
+        && validFondue(d.notes[2])
+        && validFondue(d.notes[3])
+        && d.createdAt == request.time;
+    }
+    match /votes/{userId} {
+      // Un juré peut vérifier uniquement son propre vote.
+      // L'organisateur peut consulter tous les votes.
+      allow get: if isOrganizer() || (request.auth != null && request.auth.uid == userId);
+      allow list: if isOrganizer();
+      allow create: if request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'anonymous'
+        && request.auth.uid == userId
+        && validVote();
+      allow update, delete: if false;
+    }
+  }
+}
