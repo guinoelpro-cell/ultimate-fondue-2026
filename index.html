@@ -16,7 +16,59 @@ $('submitVote').onclick=async()=>{const prenom=$('prenom').value.trim();if(!pren
 $('login').onclick=async()=>{const b=$('login');b.disabled=true;setStatus('loginStatus','Connexion en cours…');try{await setPersistence(auth,browserLocalPersistence);const result=await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value);$('password').value='';if(result.user.uid!==ORGANIZER){await signOut(auth);throw Error('Ce compte ne dispose pas des droits organisateur.')}setStatus('loginStatus','Connecté.','ok')}catch(e){setStatus('loginStatus',e.message,'error')}finally{b.disabled=false}};
 $('logout').onclick=async()=>{revealed=false;$('results').classList.add('hidden');$('secret').classList.remove('hidden');await signOut(auth);showView('jury')};
 $('reveal').onclick=()=>{if(!confirm('Afficher le classement final sur cet écran ?'))return;revealed=true;$('secret').classList.add('hidden');$('results').classList.remove('hidden');renderRanking()};$('hideResults').onclick=()=>{revealed=false;$('results').classList.add('hidden');$('secret').classList.remove('hidden')};
-function renderRanking(){const sums=letters.map((_,i)=>votes.reduce((s,v)=>s+total(v.notes[i]),0)),avg=sums.map(s=>votes.length?s/votes.length:0);$('ranking').innerHTML='<table><thead><tr><th>Rang</th><th>Fondue</th><th>Moyenne</th></tr></thead><tbody>'+letters.map((l,i)=>({l,i})).sort((a,b)=>avg[b.i]-avg[a.i]).map(({l,i},rank)=>`<tr><td>${rank+1}${rank===0?' 🏆':''}</td><td>${l}</td><td><strong>${avg[i].toFixed(1)}/100</strong></td></tr>`).join('')+'</tbody></table>';$('voters').replaceChildren(...votes.map(v=>{const p=document.createElement('p');p.textContent=v.prenom+' — '+v.notes.map((s,i)=>letters[i]+': '+total(s)).join(' · ');return p}))}
-function csvCell(v){return '"'+String(v).replaceAll('"','""')+'"'}$('export').onclick=()=>{const rows=[['Jury',...letters.flatMap(l=>criteria.map(([n])=>l+' - '+n))],...votes.map(v=>[v.prenom,...v.notes.flat()])],blob=new Blob(['\ufeff'+rows.map(r=>r.map(csvCell).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ultimate-fondue-award-2026-resultats.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+
+function renderRanking(){
+  const sums=letters.map((_,i)=>
+    votes.reduce((s,v)=>s+total(v.notes[i].scores),0)
+  );
+  const avg=sums.map(s=>votes.length?s/votes.length:0);
+
+  $('ranking').innerHTML=
+    '<table><thead><tr><th>Rang</th><th>Fondue</th><th>Moyenne</th></tr></thead><tbody>'+
+    letters.map((l,i)=>({l,i}))
+      .sort((a,b)=>avg[b.i]-avg[a.i])
+      .map(({l,i},rank)=>
+        `<tr><td>${rank+1}${rank===0?' 🏆':''}</td><td>${l}</td><td><strong>${avg[i].toFixed(1)}/100</strong></td></tr>`
+      ).join('')+
+    '</tbody></table>';
+
+  $('voters').replaceChildren(...votes.map(v=>{
+    const p=document.createElement('p');
+    p.textContent=v.prenom+' — '+
+      v.notes.map((s,i)=>letters[i]+': '+total(s.scores)).join(' · ');
+    return p;
+  }));
+}
+
+function csvCell(v) {
+  return '"' + String(v).replaceAll('"', '""') + '"';
+}
+
+$('export').onclick = () => {
+  const rows = [
+    ['Jury', ...letters.flatMap(l =>
+      criteria.map(([n]) => l + ' - ' + n)
+    )],
+    ...votes.map(v => [
+      v.prenom,
+      ...v.notes.flatMap(f => f.scores)
+    ])
+  ];
+
+  const blob = new Blob(
+    ['\ufeff' + rows.map(r =>
+      r.map(csvCell).join(';')
+    ).join('\r\n')],
+    {type: 'text/csv;charset=utf-8'}
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ultimate-fondue-award-2026-resultats.csv';
+  a.click();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 renderForm();
 </script></body></html>
